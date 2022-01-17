@@ -2,7 +2,49 @@
     <v-app class="ma-5">
         <div class="main">
             <div class="ma-3">
-    <v-data-table
+              <v-row>
+                <v-col>
+                  <v-file-input
+                            id="inputFile"
+                            label="Search file"
+                            counter
+                            truncate-length="15"
+                            solo
+                            type="file"
+                            @change="fileValue"
+                            >
+                  </v-file-input>
+                </v-col>
+                <v-col cols="2">
+                  <v-btn
+                    color="blue"
+                    class="ma-2 white--text"
+                    @click="addRecord">
+                      Upload
+                    <v-icon
+                      right
+                      dark>
+                        mdi-cloud-upload
+                    </v-icon>
+                  </v-btn>
+                </v-col>
+                <v-col cols="2">
+                  <v-btn
+                    color="blue"
+                    class="ma-2 white--text"
+                    @click="downloadAsExcel">
+                      Download
+                    <v-icon
+                      right
+                      dark>
+                        mdi-cloud-upload
+                    </v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>    
+                  <v-data-table
     :headers="head"
     :items="tableData"
     sort-by="calories"
@@ -193,18 +235,29 @@
         Reset
       </v-btn>
     </template>
-  </v-data-table>
+  </v-data-table></v-col>
+              </v-row>
   </div>
        </div>
     </v-app>
 </template>
 <script>
+import XLSX from "xlsx";
 import Popup from "./PopupColumns.vue"
+import filesaver from '../filesaver'
   export default {
     components:{Popup},
     computed: {
       formTitle () {
         return this.editedIndex === -1 ? 'New Item' : 'Edit Item'
+      },
+      columns:{
+          get(){
+            return this.$store.state.columns;
+          },
+          set(data){
+            this.$store.commit('setColumns', data);
+          }
       },
       customHeaders:{
           get(){
@@ -262,28 +315,27 @@ import Popup from "./PopupColumns.vue"
                 this.$store.commit('setFilterstatus', data);
             }
           },
-      head(){
-          if(this.customHeaders.length > 0&&this.filterstatus==true){
-            this.columns=this.customHeaders;
+      head:{
+          get(){
             return this.columns;
-            
-          }else if(this.filterstatus==false){
-            return this.columns;
-          }else{
-            this.columns=this.headers;
+          },
+          set(){
             return this.columns;
           }
-          
       },
       
     },
     data(){
      return{
+       
+       EXCEL_TYPE : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8',
+       EXCEL_EXTENSION : '.xlsx',
+       dataFile:{},
+       sheets:[],
+       files:[],
         search: '',
          dialog: false,
       dialogDelete: false,
-      customColumns:[],
-      columns:[],
       editedIndex: -1,
       editedItem: {
         name: '',
@@ -374,25 +426,76 @@ import Popup from "./PopupColumns.vue"
           switch (opt) {
                 case 1:
                     this.$store.commit('setFilterstatus', false);
-                    this.columns=this.headers;
+                    this.$store.commit('setColumns', this.headers);
                     break;
                 case 2:
                   this.$store.commit('setFilterstatus', false);
-                    this.columns=this.headersF1;
+                  this.$store.commit('setColumns', this.headersF1);
                     break;
                 case 3:
                   this.$store.commit('setFilterstatus', false);
-                    this.columns=this.headersF2;
+                  this.$store.commit('setColumns', this.headersF2);
                     break;
                 case 4:
                   this.$store.commit('setFilterstatus', false);
-                    this.columns=this.headersF3;
+                  this.$store.commit('setColumns', this.headersF3);
                     break;
           
               default:
                   break;
           }
-      }
+      },
+             fileValue(vueVal){
+            if(vueVal===null){
+                console.log("Null"); 
+            }else{
+                let that=this;
+                console.log(vueVal); 
+                var reader = new FileReader();
+                reader.onload = function(vueVal) {
+
+                    var data = new Uint8Array(vueVal.target.result);
+                    var workbook = XLSX.read(data, {type: 'array'});
+                    let sheetNames = workbook.SheetNames;
+                    // /* DO SOMETHING WITH workbook HERE */
+                    that.dataFile=workbook;
+                    //console.log(that.dataFile); 
+                    that.sheets=sheetNames[0];
+                    let worksheet = workbook.Sheets[that.sheets];
+                    that.files=XLSX.utils.sheet_to_json(worksheet);
+                    console.log(XLSX.utils.sheet_to_json(worksheet));
+                    
+                    
+                };
+                reader.readAsArrayBuffer(vueVal);
+            }
+        },
+        addRecord(){
+          let arrayData=this.alldata;
+            console.log(this.files);
+          
+          this.files.forEach(element => {
+                arrayData.push(element);
+            });
+          this.$store.commit('setAlldata', arrayData);
+
+        },
+        downloadAsExcel(){
+          const worksheet = XLSX.utils.json_to_sheet(this.alldata);
+          const workbook={
+            Sheets:{
+              'data':worksheet
+            },
+            SheetNames:['data']
+          };
+          const excelBuffer=XLSX.write(workbook,{ bookType:'xlsx', type:'array'});
+          console.log(excelBuffer);
+          this.saveAsExcel(excelBuffer, 'myFile');
+        },
+        saveAsExcel(buffer, filename){
+          const data=new Blob([buffer], {type:this.EXCEL_TYPE});
+          filesaver.saveAs(data,filename+'_export_'+ new Date().getTime()+this.EXCEL_EXTENSION);
+        }
     },
   }
 </script>

@@ -6,6 +6,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
     state: {
         filterstatus: false,
+        columns: [],
         customHeaders: [],
         headers: [{ text: "county_name", value: "county_name" },
             { text: "county_id", value: "county_id" },
@@ -530,6 +531,9 @@ export default new Vuex.Store({
 
     },
     mutations: {
+        setColumns(state, payload) {
+            state.columns = [...payload];
+        },
         setCustomHeaders(state, payload) {
             state.customHeaders = [...payload];
         },
@@ -556,6 +560,16 @@ export default new Vuex.Store({
         agregarHeaders({ commit, state }, column) {
             console.log(state);
             commit('setCustomHeaders', column)
+
+        },
+        agregarMainHeaders({ commit, state }, column) {
+            console.log(state);
+            commit('setColumns', column)
+
+        },
+        agregaralldata({ commit, state }, column) {
+            console.log(state);
+            commit('setAlldata', column)
 
         }
     },
