@@ -13,7 +13,7 @@
           v-on="on"
           class="mr-2 mb-2"
         >
-          Open Dialog
+          Select Columns
         </v-btn>
       </template>
       <v-card>

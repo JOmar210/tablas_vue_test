@@ -527,7 +527,11 @@ export default new Vuex.Store({
                 land_cds: '',
                 land_descrip: '',
             },
-        ]
+        ],
+        users: [{
+            user: "ocervantes@quickapps.mx",
+            password: "password"
+        }],
 
     },
     mutations: {
@@ -554,6 +558,9 @@ export default new Vuex.Store({
         },
         setFilterstatus(state, payload) {
             state.filterstatus = payload;
+        },
+        setUsers(state, payload) {
+            state.users = payload;
         },
     },
     actions: {
